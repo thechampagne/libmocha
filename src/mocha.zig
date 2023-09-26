@@ -45,7 +45,7 @@ export fn mocha_deinit(object: *mocha_object_t) void {
 
 export fn mocha_field(object: *mocha_object_t, index: usize) mocha_field_t {
     const fields = fieldsCast(object.*.fields, object.*.fields_len);
-    return .{ .name = fields[index].name, .value = .{ .boolean = true} };
+    return .{ .name = fields[index].name.ptr, .value = .{ .boolean = true} };
 }
 
 inline fn fieldsCast(fields: *anyopaque, fields_len: usize) []mocha.Field {
