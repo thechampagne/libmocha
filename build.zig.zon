@@ -1,0 +1,10 @@
+.{
+    .name = "libmocha",
+    .version = "0.1.0",
+    .dependencies = .{
+        .mocha = .{
+            .url = "https://github.com/hqnna/mocha/archive/refs/tags/0.5.0.tar.gz",
+            .hash = "12205541f2f1b530e17e5ed331c8aeab1f34126b839aeab298a64ff9ebcb467533f9"
+        },
+    },
+}
