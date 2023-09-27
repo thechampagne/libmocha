@@ -2,10 +2,18 @@ const std = @import("std");
 const mocha = @import("mocha");
 const allocator = std.heap.c_allocator;
 
-
-// const mocha_error = enum(c_int) {
-//     MissingField, DuplicateField, RootReference, OutOfMemory, InvalidCharacter, Overflow, Core.Error = ?
-// };
+const mocha_error_t = enum(c_int) {
+    MOCHA_ERROR_NONE,
+    MOCHA_ERROR_MISSING_FIELD,
+    MOCHA_ERROR_DUPLICATE_FIELD,
+    MOCHA_ERROR_ROOT_REFERENCE,
+    MOCHA_ERROR_OUT_OF_MEMORY,
+    MOCHA_ERROR_INVALID_CHARACTER,
+    MOCHA_ERROR_OVERFLOW,
+    MOCHA_ERROR_END_OF_STREAM,
+    MOCHA_ERROR_UNEXPECTED_TOKEN,
+    MOCHA_ERROR_UNEXPECTED_CHARACTER
+};
 
 const mocha_value_type_t = enum(c_int) {
     MOCHA_VALUE_TYPE_NIL,
@@ -20,12 +28,19 @@ const mocha_value_type_t = enum(c_int) {
 
 const mocha_value_t = extern union {
     string: [*:0]const u8,
-    //ref: Reference,
+    //reference: mocha_reference_t,
     boolean: bool,
     object: mocha_object_t,
     array: mocha_array_t,
     float64: f64,
     integer64: i64,
+};
+
+const mocha_reference_t = extern struct {
+    name: [*]const u8,
+    name_len: usize,
+    child: ?*const mocha_reference_t,
+    index: usize,
 };
 
 const mocha_array_t = extern struct {
@@ -44,10 +59,10 @@ const mocha_object_t = extern struct {
     fields_len: usize,
 };
 
-export fn mocha_parse(object: *mocha_object_t, src: [*:0]const u8) void {
-    const obj = mocha.Parser.parse(allocator, std.mem.span(src)) catch return;
+export fn mocha_parse(object: *mocha_object_t, src: [*:0]const u8) mocha_error_t {
+    const obj = mocha.Parser.parse(allocator, std.mem.span(src)) catch |err| return handleMochaError(err);
     object.* = .{ .fields = obj.fields.ptr, .fields_len = obj.fields.len};
-    return;
+    return .MOCHA_ERROR_NONE;
 }
 
 export fn mocha_deinit(object: *mocha_object_t) void {
@@ -89,6 +104,55 @@ export fn mocha_field(object: *mocha_object_t, index: usize) mocha_field_t {
     return .{ .name = fields[index].name.ptr, .value = value, .@"type" = @"type" };
 }
 
+export fn mocha_array(array: *mocha_array_t, value: *mocha_value_t, index: usize) mocha_value_type_t {
+    const items = itemsCast(array.*.items, array.*.items_len);
+    switch(items[index]) {
+        .string => |s| {
+            value.* = .{ .string = s.ptr };
+            return .MOCHA_VALUE_TYPE_STRING;
+        },
+        .boolean => |b| {
+            value.* = .{ .boolean = b };
+            return .MOCHA_VALUE_TYPE_BOOLEAN;
+        },
+        .object => |o| {
+            value.* = .{ .object = .{ .fields = o.fields.ptr, .fields_len = o.fields.len} };
+            return .MOCHA_VALUE_TYPE_OBJECT;
+        },
+        .array => |a| {
+            value.* = .{ .array = .{ .items = a.items.ptr, .items_len = a.items.len} };
+            return .MOCHA_VALUE_TYPE_ARRAY;
+        },
+        .float => |f| {
+            value.* = .{ .float64 = f };
+            return .MOCHA_VALUE_TYPE_FLOAT64;
+        },
+        .int => |i| {
+            value.* = .{ .integer64 = i };
+            return .MOCHA_VALUE_TYPE_INTEGER64;
+        },
+        else => return .MOCHA_VALUE_TYPE_NIL
+    }
+}
+
 inline fn fieldsCast(fields: *anyopaque, fields_len: usize) []mocha.Field {
     return @as([*]mocha.Field, @ptrCast(@alignCast(fields)))[0..fields_len];
+}
+
+inline fn itemsCast(items: *anyopaque, items_len: usize) []mocha.Value {
+    return @as([*]mocha.Value, @ptrCast(@alignCast(items)))[0..items_len];
+}
+
+inline fn handleMochaError(err: mocha.Error) mocha_error_t {
+    switch(err) {
+        error.MissingField        => return .MOCHA_ERROR_MISSING_FIELD,
+        error.DuplicateField      => return .MOCHA_ERROR_DUPLICATE_FIELD,
+        error.RootReference       => return .MOCHA_ERROR_ROOT_REFERENCE,
+        error.OutOfMemory         => return .MOCHA_ERROR_OUT_OF_MEMORY,
+        error.InvalidCharacter    => return .MOCHA_ERROR_INVALID_CHARACTER,
+        error.Overflow            => return .MOCHA_ERROR_OVERFLOW,
+        error.EndOfStream         => return .MOCHA_ERROR_END_OF_STREAM,
+        error.UnexpectedToken     => return .MOCHA_ERROR_UNEXPECTED_TOKEN,
+        error.UnexpectedCharacter => return .MOCHA_ERROR_UNEXPECTED_CHARACTER
+    }
 }
