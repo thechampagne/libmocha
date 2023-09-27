@@ -18,7 +18,7 @@ const mocha_error_t = enum(c_int) {
 const mocha_value_type_t = enum(c_int) {
     MOCHA_VALUE_TYPE_NIL,
     MOCHA_VALUE_TYPE_STRING,
-    //MOCHA_VALUE_TYPE_REFERENCE,
+    MOCHA_VALUE_TYPE_REFERENCE,
     MOCHA_VALUE_TYPE_BOOLEAN,
     MOCHA_VALUE_TYPE_OBJECT,
     MOCHA_VALUE_TYPE_ARRAY,
@@ -28,7 +28,7 @@ const mocha_value_type_t = enum(c_int) {
 
 const mocha_value_t = extern union {
     string: [*:0]const u8,
-    //reference: mocha_reference_t,
+    reference: mocha_reference_t,
     boolean: bool,
     object: mocha_object_t,
     array: mocha_array_t,
@@ -39,7 +39,7 @@ const mocha_value_t = extern union {
 const mocha_reference_t = extern struct {
     name: [*]const u8,
     name_len: usize,
-    child: ?*const mocha_reference_t,
+    child: ?*const anyopaque,
     index: usize,
 };
 
@@ -61,7 +61,7 @@ const mocha_object_t = extern struct {
 
 export fn mocha_parse(object: *mocha_object_t, src: [*:0]const u8) mocha_error_t {
     const obj = mocha.Parser.parse(allocator, std.mem.span(src)) catch |err| return handleMochaError(err);
-    object.* = .{ .fields = obj.fields.ptr, .fields_len = obj.fields.len};
+    object.* = .{ .fields = @ptrCast(obj.fields.ptr), .fields_len = obj.fields.len};
     return .MOCHA_ERROR_NONE;
 }
 
@@ -79,16 +79,20 @@ export fn mocha_field(object: *mocha_object_t, index: usize) mocha_field_t {
             value = .{ .string = s.ptr };
             @"type" = .MOCHA_VALUE_TYPE_STRING;
         },
+        .ref => |r| {
+            value  = .{ .reference = .{ .name = r.name.ptr, .name_len = r.name.len, .child = @ptrCast(r.child), .index = r.index.? } };
+            @"type" = .MOCHA_VALUE_TYPE_REFERENCE;
+        },
         .boolean => |b| {
             value = .{ .boolean = b };
             @"type" = .MOCHA_VALUE_TYPE_BOOLEAN;
         },
         .object => |o| {
-            value = .{ .object = .{ .fields = o.fields.ptr, .fields_len = o.fields.len} };
+            value = .{ .object = .{ .fields = @ptrCast(o.fields.ptr), .fields_len = o.fields.len} };
             @"type" = .MOCHA_VALUE_TYPE_OBJECT;
         },
         .array => |a| {
-            value = .{ .array = .{ .items = a.items.ptr, .items_len = a.items.len} };
+            value = .{ .array = .{ .items = @ptrCast(a.items.ptr), .items_len = a.items.len} };
             @"type" = .MOCHA_VALUE_TYPE_ARRAY;
         },
         .float => |f| {
@@ -111,16 +115,20 @@ export fn mocha_array(array: *mocha_array_t, value: *mocha_value_t, index: usize
             value.* = .{ .string = s.ptr };
             return .MOCHA_VALUE_TYPE_STRING;
         },
+        .ref => |r| {
+            value.* = .{ .reference = .{ .name = r.name.ptr, .name_len = r.name.len, .child = @ptrCast(r.child), .index = r.index.? } };
+            return .MOCHA_VALUE_TYPE_REFERENCE;
+        },
         .boolean => |b| {
             value.* = .{ .boolean = b };
             return .MOCHA_VALUE_TYPE_BOOLEAN;
         },
         .object => |o| {
-            value.* = .{ .object = .{ .fields = o.fields.ptr, .fields_len = o.fields.len} };
+            value.* = .{ .object = .{ .fields = @ptrCast(o.fields.ptr), .fields_len = o.fields.len} };
             return .MOCHA_VALUE_TYPE_OBJECT;
         },
         .array => |a| {
-            value.* = .{ .array = .{ .items = a.items.ptr, .items_len = a.items.len} };
+            value.* = .{ .array = .{ .items = @ptrCast(a.items.ptr), .items_len = a.items.len} };
             return .MOCHA_VALUE_TYPE_ARRAY;
         },
         .float => |f| {
@@ -133,6 +141,20 @@ export fn mocha_array(array: *mocha_array_t, value: *mocha_value_t, index: usize
         },
         else => return .MOCHA_VALUE_TYPE_NIL
     }
+}
+
+export fn mocha_reference_next(child_ref: ?*anyopaque, reference: *mocha_reference_t) c_int {
+    if (child_ref) |r| {
+        const ref = @as(*const mocha.Reference, @ptrCast(@alignCast(r)));
+        reference.* = .{
+            .name = ref.name.ptr,
+            .name_len = ref.name.len,
+            .child = @ptrCast(ref.child),
+            .index = ref.index.?,
+        };
+        return 0;
+    }
+    return 1;
 }
 
 inline fn fieldsCast(fields: *anyopaque, fields_len: usize) []mocha.Field {
