@@ -29,7 +29,7 @@ const mocha_value_type_t = enum(c_int) {
 const mocha_value_t = extern union {
     string: [*:0]const u8,
     reference: mocha_reference_t,
-    boolean: bool,
+    boolean: c_int,
     object: mocha_object_t,
     array: mocha_array_t,
     float64: f64,
@@ -84,7 +84,7 @@ export fn mocha_field(object: *mocha_object_t, index: usize) mocha_field_t {
             @"type" = .MOCHA_VALUE_TYPE_REFERENCE;
         },
         .boolean => |b| {
-            value = .{ .boolean = b };
+            value = .{ .boolean = if (b) 1 else 0 };
             @"type" = .MOCHA_VALUE_TYPE_BOOLEAN;
         },
         .object => |o| {
@@ -120,7 +120,7 @@ export fn mocha_array(array: *mocha_array_t, value: *mocha_value_t, index: usize
             return .MOCHA_VALUE_TYPE_REFERENCE;
         },
         .boolean => |b| {
-            value.* = .{ .boolean = b };
+            value.* = .{ .boolean = if (b) 1 else 0 };
             return .MOCHA_VALUE_TYPE_BOOLEAN;
         },
         .object => |o| {
