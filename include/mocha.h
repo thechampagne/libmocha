@@ -103,11 +103,11 @@ extern mocha_error_t mocha_parse(mocha_object_t* object, const char* src);
 
 extern void mocha_deinit(mocha_object_t* object);
 
-extern mocha_field_t mocha_field(mocha_object_t* object, size_t index);
+extern mocha_field_t mocha_field(const mocha_object_t* object, size_t index);
 
-extern mocha_value_type_t mocha_array(mocha_array_t* array, mocha_value_t* value, size_t index);
+extern mocha_value_type_t mocha_array(const mocha_array_t* array, mocha_value_t* value, size_t index);
 
-extern int mocha_reference_next(void* child_ref, mocha_reference_t* reference);
+extern int mocha_reference_next(const void* child_ref, mocha_reference_t* reference);
 
 #ifdef __cplusplus
 }
