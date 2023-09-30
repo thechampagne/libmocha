@@ -70,7 +70,7 @@ export fn mocha_deinit(object: *mocha_object_t) void {
     obj.deinit(allocator);
 }
 
-export fn mocha_field(object: *mocha_object_t, index: usize) mocha_field_t {
+export fn mocha_field(object: *const mocha_object_t, index: usize) mocha_field_t {
     const fields = fieldsCast(object.*.fields, object.*.fields_len);
     var value: mocha_value_t = undefined;
     var @"type": mocha_value_type_t = undefined;
@@ -108,7 +108,7 @@ export fn mocha_field(object: *mocha_object_t, index: usize) mocha_field_t {
     return .{ .name = fields[index].name.ptr, .value = value, .@"type" = @"type" };
 }
 
-export fn mocha_array(array: *mocha_array_t, value: *mocha_value_t, index: usize) mocha_value_type_t {
+export fn mocha_array(array: *const mocha_array_t, value: *mocha_value_t, index: usize) mocha_value_type_t {
     const items = itemsCast(array.*.items, array.*.items_len);
     switch(items[index]) {
         .string => |s| {
@@ -143,7 +143,7 @@ export fn mocha_array(array: *mocha_array_t, value: *mocha_value_t, index: usize
     }
 }
 
-export fn mocha_reference_next(child_ref: ?*anyopaque, reference: *mocha_reference_t) c_int {
+export fn mocha_reference_next(child_ref: ?*const anyopaque, reference: *mocha_reference_t) c_int {
     if (child_ref) |r| {
         const ref = @as(*const mocha.Reference, @ptrCast(@alignCast(r)));
         reference.* = .{
