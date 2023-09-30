@@ -31,8 +31,9 @@ pub fn build(b: *std.Build) void {
         .root_source_file = .{ .path = "src/mocha.zig" },
         .optimize = optimize,
     });
+    main_tests.addModule("mocha", mocha.module("mocha"));
     main_tests.linkLibC();
 
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&main_tests.step);
+    test_step.dependOn(&b.addRunArtifact(main_tests).step);
 }
