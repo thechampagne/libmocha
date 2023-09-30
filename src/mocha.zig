@@ -80,7 +80,7 @@ export fn mocha_field(object: *const mocha_object_t, index: usize) mocha_field_t
             @"type" = .MOCHA_VALUE_TYPE_STRING;
         },
         .ref => |r| {
-            value  = .{ .reference = .{ .name = r.name.ptr, .name_len = r.name.len, .child = @ptrCast(r.child), .index = r.index.? } };
+            value  = .{ .reference = .{ .name = r.name.ptr, .name_len = r.name.len, .child = @ptrCast(r.child), .index = if (r.index != null) r.index.? else 0 } };
             @"type" = .MOCHA_VALUE_TYPE_REFERENCE;
         },
         .boolean => |b| {
@@ -116,7 +116,7 @@ export fn mocha_array(array: *const mocha_array_t, value: *mocha_value_t, index:
             return .MOCHA_VALUE_TYPE_STRING;
         },
         .ref => |r| {
-            value.* = .{ .reference = .{ .name = r.name.ptr, .name_len = r.name.len, .child = @ptrCast(r.child), .index = r.index.? } };
+            value.* = .{ .reference = .{ .name = r.name.ptr, .name_len = r.name.len, .child = @ptrCast(r.child), .index = if (r.index != null) r.index.? else 0 } };
             return .MOCHA_VALUE_TYPE_REFERENCE;
         },
         .boolean => |b| {
@@ -150,7 +150,7 @@ export fn mocha_reference_next(child_ref: ?*const anyopaque, reference: *mocha_r
             .name = ref.name.ptr,
             .name_len = ref.name.len,
             .child = @ptrCast(ref.child),
-            .index = ref.index.?,
+            .index = if (ref.index != null) ref.index.? else 0,
         };
         return 0;
     }
