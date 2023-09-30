@@ -178,3 +178,75 @@ inline fn handleMochaError(err: mocha.Error) mocha_error_t {
         error.UnexpectedCharacter => return .MOCHA_ERROR_UNEXPECTED_CHARACTER
     }
 }
+
+test "library tests" {
+    const text =
+        \\defaults: {
+        \\user_id: 0
+        \\start_id: user_id
+        \\}
+
+        \\hanna: {
+        \\name: 'hanna rose'
+        \\id: @:defaults:user_id
+        \\inventory: ['banana' 12.32]
+        \\}
+    ;
+    var object: mocha_object_t = undefined;
+    _ = mocha_parse(&object, text);
+    defer mocha_deinit(&object);
+    {
+        const field = mocha_field(&object, 0);
+        try @import("std").testing.expect(std.mem.eql(u8, field.name[0..8], "defaults"));
+        try @import("std").testing.expectEqual(field.@"type", .MOCHA_VALUE_TYPE_OBJECT);
+
+        const field1 = mocha_field(&field.value.object, 0);
+        try @import("std").testing.expect(std.mem.eql(u8, field1.name[0..7], "user_id"));
+        try @import("std").testing.expectEqual(field1.@"type", .MOCHA_VALUE_TYPE_INTEGER64);
+        try @import("std").testing.expectEqual(field1.value.integer64, 0);
+
+        const field2 = mocha_field(&field.value.object, 1);
+        try @import("std").testing.expect(std.mem.eql(u8, field2.name[0..8], "start_id"));
+        try @import("std").testing.expectEqual(field2.@"type", .MOCHA_VALUE_TYPE_REFERENCE);
+        try @import("std").testing.expect(std.mem.eql(u8, field2.value.reference.name[0..7], "user_id"));
+    }
+
+    {
+        const field = mocha_field(&object, 1);
+        try @import("std").testing.expect(std.mem.eql(u8, field.name[0..5], "hanna"));
+        try @import("std").testing.expectEqual(field.@"type", .MOCHA_VALUE_TYPE_OBJECT);
+
+        const field1 = mocha_field(&field.value.object, 0);
+        try @import("std").testing.expect(std.mem.eql(u8, field1.name[0..4], "name"));
+        try @import("std").testing.expectEqual(field1.@"type", .MOCHA_VALUE_TYPE_STRING);
+        try @import("std").testing.expect(std.mem.eql(u8, field1.value.string[0..10], "hanna rose"));
+
+        const field2 = mocha_field(&field.value.object, 1);
+        try @import("std").testing.expect(std.mem.eql(u8, field2.name[0..2], "id"));
+        try @import("std").testing.expectEqual(field2.@"type", .MOCHA_VALUE_TYPE_REFERENCE);
+        try @import("std").testing.expect(std.mem.eql(u8, field2.value.reference.name[0..1], "@"));
+
+        var ref: mocha_reference_t = undefined;
+        _ = mocha_reference_next(field2.value.reference.child, &ref);
+        try @import("std").testing.expect(std.mem.eql(u8, ref.name[0..8], "defaults"));
+        
+        var ref1: mocha_reference_t = undefined;
+        _ = mocha_reference_next(ref.child, &ref1);
+        try @import("std").testing.expect(std.mem.eql(u8, ref1.name[0..7], "user_id"));
+        
+        try @import("std").testing.expect(ref1.child == null);
+
+        const field3 = mocha_field(&field.value.object, 2);
+        try @import("std").testing.expect(std.mem.eql(u8, field3.name[0..9], "inventory"));
+        try @import("std").testing.expectEqual(field3.@"type", .MOCHA_VALUE_TYPE_ARRAY);
+
+        var value: mocha_value_t = undefined;
+        const value_type = mocha_array(&field3.value.array, &value, 0);
+        try @import("std").testing.expectEqual(value_type, .MOCHA_VALUE_TYPE_STRING);
+        try @import("std").testing.expect(std.mem.eql(u8, value.string[0..6], "banana"));
+        
+        const value_type1 = mocha_array(&field3.value.array, &value, 1);
+        try @import("std").testing.expectEqual(value_type1, .MOCHA_VALUE_TYPE_FLOAT64);
+        try @import("std").testing.expectEqual(value.float64, 12.32);
+    }
+}
