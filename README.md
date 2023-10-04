@@ -5,6 +5,7 @@
 A C library to parse **mocha** an elegant configuration language for both humans and machines.
 
 ### Example
+This program output all tokens in text.
 ```c
 #include <stdio.h>
 #include <mocha.h>
@@ -78,6 +79,7 @@ int main(void)
     printf("}\n");
   }
   mocha_deinit(&obj);
+  return 0;
 }
 ```
 
