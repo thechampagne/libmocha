@@ -62,7 +62,7 @@ int main(void) {
           if (field0.value.reference.child != NULL) printf(":");
           mocha_reference_t reference;
           reference.child = field0.value.reference.child;
-          while (mocha_reference_next(reference.child, &reference) == 0) {
+          while (mocha_reference_next(&reference) == 0) {
             fwrite(reference.name, reference.name_len, 1, stdout);
             if (reference.child != NULL) printf(":");
           }
