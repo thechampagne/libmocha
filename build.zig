@@ -13,6 +13,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .target = target,
     });
+    staticLib.disable_stack_probing = true;
     staticLib.addModule("mocha", mocha.module("mocha"));
     staticLib.linkLibC();
     b.installArtifact(staticLib);
