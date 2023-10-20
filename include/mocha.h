@@ -107,7 +107,7 @@ extern mocha_field_t mocha_field(const mocha_object_t* object, size_t index);
 
 extern mocha_value_type_t mocha_array(const mocha_array_t* array, mocha_value_t* value, size_t index);
 
-extern int mocha_reference_next(const void* child_ref, mocha_reference_t* reference);
+extern int mocha_reference_next(mocha_reference_t* reference);
 
 #ifdef __cplusplus
 }
