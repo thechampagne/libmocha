@@ -143,8 +143,8 @@ export fn mocha_array(array: *const mocha_array_t, value: *mocha_value_t, index:
     }
 }
 
-export fn mocha_reference_next(child_ref: ?*const anyopaque, reference: *mocha_reference_t) c_int {
-    if (child_ref) |r| {
+export fn mocha_reference_next(reference: *mocha_reference_t) c_int {
+    if (reference.*.child) |r| {
         const ref = @as(*const mocha.Reference, @ptrCast(@alignCast(r)));
         reference.* = .{
             .name = ref.name.ptr,
@@ -227,15 +227,14 @@ test "library tests" {
         try @import("std").testing.expectEqual(field2.@"type", .MOCHA_VALUE_TYPE_REFERENCE);
         try @import("std").testing.expect(std.mem.eql(u8, field2.value.reference.name[0..1], "@"));
 
-        var ref: mocha_reference_t = undefined;
-        _ = mocha_reference_next(field2.value.reference.child, &ref);
+        var ref: mocha_reference_t = field2.value.reference;
+        _ = mocha_reference_next(&ref);
         try @import("std").testing.expect(std.mem.eql(u8, ref.name[0..8], "defaults"));
         
-        var ref1: mocha_reference_t = undefined;
-        _ = mocha_reference_next(ref.child, &ref1);
-        try @import("std").testing.expect(std.mem.eql(u8, ref1.name[0..7], "user_id"));
+        _ = mocha_reference_next(&ref);
+        try @import("std").testing.expect(std.mem.eql(u8, ref.name[0..7], "user_id"));
         
-        try @import("std").testing.expect(ref1.child == null);
+        try @import("std").testing.expect(ref.child == null);
 
         const field3 = mocha_field(&field.value.object, 2);
         try @import("std").testing.expect(std.mem.eql(u8, field3.name[0..9], "inventory"));
