@@ -166,17 +166,17 @@ inline fn itemsCast(items: *anyopaque, items_len: usize) []mocha.Value {
 }
 
 inline fn handleMochaError(err: mocha.Error) mocha_error_t {
-    switch(err) {
-        error.MissingField        => return .MOCHA_ERROR_MISSING_FIELD,
-        error.DuplicateField      => return .MOCHA_ERROR_DUPLICATE_FIELD,
-        error.RootReference       => return .MOCHA_ERROR_ROOT_REFERENCE,
-        error.OutOfMemory         => return .MOCHA_ERROR_OUT_OF_MEMORY,
-        error.InvalidCharacter    => return .MOCHA_ERROR_INVALID_CHARACTER,
-        error.Overflow            => return .MOCHA_ERROR_OVERFLOW,
-        error.EndOfStream         => return .MOCHA_ERROR_END_OF_STREAM,
-        error.UnexpectedToken     => return .MOCHA_ERROR_UNEXPECTED_TOKEN,
-        error.UnexpectedCharacter => return .MOCHA_ERROR_UNEXPECTED_CHARACTER
-    }
+    return switch(err) {
+        error.MissingField        => .MOCHA_ERROR_MISSING_FIELD,
+        error.DuplicateField      => .MOCHA_ERROR_DUPLICATE_FIELD,
+        error.RootReference       => .MOCHA_ERROR_ROOT_REFERENCE,
+        error.OutOfMemory         => .MOCHA_ERROR_OUT_OF_MEMORY,
+        error.InvalidCharacter    => .MOCHA_ERROR_INVALID_CHARACTER,
+        error.Overflow            => .MOCHA_ERROR_OVERFLOW,
+        error.EndOfStream         => .MOCHA_ERROR_END_OF_STREAM,
+        error.UnexpectedToken     => .MOCHA_ERROR_UNEXPECTED_TOKEN,
+        error.UnexpectedCharacter => .MOCHA_ERROR_UNEXPECTED_CHARACTER
+    };
 }
 
 test "library tests" {
