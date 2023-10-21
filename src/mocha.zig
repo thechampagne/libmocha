@@ -65,6 +65,12 @@ export fn mocha_parse(object: *mocha_object_t, src: [*:0]const u8) mocha_error_t
     return .MOCHA_ERROR_NONE;
 }
 
+export fn mocha_nparse(object: *mocha_object_t, src: [*]const u8, len: usize) mocha_error_t {
+    const obj = mocha.Parser.parse(allocator, src[0..len]) catch |err| return handleMochaError(err);
+    object.* = .{ .fields = @ptrCast(obj.fields.ptr), .fields_len = obj.fields.len};
+    return .MOCHA_ERROR_NONE;
+}
+
 export fn mocha_deinit(object: *mocha_object_t) void {
     const obj = mocha.Object{ .fields = fieldsCast(object.*.fields, object.*.fields_len) };
     obj.deinit(allocator);
