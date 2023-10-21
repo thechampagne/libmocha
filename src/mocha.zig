@@ -199,6 +199,9 @@ test "library tests" {
         \\}
     ;
     var object: mocha_object_t = undefined;
+    const mocha_err1 = mocha_nparse(&object, text, text.len);
+    try @import("std").testing.expectEqual(mocha_err1, .MOCHA_ERROR_NONE);
+    mocha_deinit(&object);
     const mocha_err = mocha_parse(&object, text);
     try @import("std").testing.expectEqual(mocha_err, .MOCHA_ERROR_NONE);
     defer mocha_deinit(&object);
