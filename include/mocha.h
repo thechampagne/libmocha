@@ -101,6 +101,8 @@ typedef struct {
 
 extern mocha_error_t mocha_parse(mocha_object_t* object, const char* src);
 
+extern mocha_error_t mocha_nparse(mocha_object_t* object, const char* src, size_t len);
+
 extern void mocha_deinit(mocha_object_t* object);
 
 extern mocha_field_t mocha_field(const mocha_object_t* object, size_t index);
